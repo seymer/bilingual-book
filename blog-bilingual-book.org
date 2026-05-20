@@ -1,0 +1,101 @@
+#+TITLE: 用 AI Agent 将英文书籍转换为中英双语对照版
+#+DATE: 2026-05-20
+#+AUTHOR: Seymer
+#+TAGS: ai kiro epub bilingual translation
+
+* 背景
+
+最近在读一本英文育儿书 /The Sovereign Child/，想做成中英对照版方便阅读。市面上的翻译工具要么需要 API key（花钱），要么翻译质量堪忧（机翻）。
+
+我想到一个思路：既然 AI coding agent（如 Kiro CLI）本身就具备翻译能力，为什么不让它直接当翻译器？
+
+* 方案
+
+最终方案非常简单：
+
+1. 用 =pandoc= 提取 EPUB 纯文本
+2. 按章节边界智能分块
+3. 用 AI agent 的 subagent 并行翻译
+4. 用 Python 脚本打包成新的 EPUB
+
+整个过程不需要任何外部 API，翻译由 agent 自己完成。
+
+* 实现
+
+** 提取文本
+
+#+begin_src bash
+pandoc input.epub -t plain --wrap=none > /tmp/book_full.txt
+wc -l /tmp/book_full.txt  # 1557 行
+#+end_src
+
+** 并行翻译
+
+将 1557 行按 ~400 行一块分成 4 个 chunk，每个 chunk 交给一个 subagent 并行翻译。每个 subagent 输出一个 Python 文件，包含 =(type, english, chinese)= 元组列表：
+
+#+begin_src python
+content_part_1 = [
+    ("chapter", "Preface", "前言"),
+    ("text",
+     "This book is inspired by a philosophy of parenting called Taking Children Seriously...",
+     "本书的灵感来源于一种名为「认真对待孩子」的育儿哲学……"),
+    # ...
+]
+#+end_src
+
+4 个 subagent 并行工作，几分钟内完成全书 768 个段落的翻译。
+
+** 生成 EPUB
+
+#+begin_src bash
+python3 generate.py epub \
+  --content-files /tmp/bilingual_part_1.py,/tmp/bilingual_part_2.py,... \
+  --title "The Sovereign Child" \
+  --author "Aaron Stupple" \
+  --output The_Sovereign_Child_双语对照.epub
+#+end_src
+
+输出：108 章，768 条目，374 KB。可以直接导入微信读书或 Apple Books。
+
+* 沉淀为 Skill
+
+为了下次复用，我把整个流程沉淀为一个 Kiro skill：
+
+#+begin_src
+~/.kiro/skills/bilingual/
+├── SKILL.md       # 工作流程指令
+└── generate.py    # EPUB/PDF 生成脚本
+#+end_src
+
+之后只需要说一句"把这本书做成双语对照版"，agent 就会自动执行完整流程。
+
+项目已开源：[[https://github.com/Seymer/bilingual-book]]
+
+* 关键优化
+
+在第一次实践中踩了几个坑，总结为以下优化：
+
+1. *智能分块* — 按章节边界分块，不盲目按行数切割。避免上下文断裂导致翻译质量下降。
+2. *翻译风格指南* — 明确"信达雅"优先级：优先通顺自然（达），兼顾忠实原意（信）。保留英文专有名词。
+3. *重试机制* — subagent 偶尔会失败，需要验证输出文件语法并自动重试。
+4. *单次写入* — Python 文件必须一次性写完整个列表，分多次 append 会导致语法错误。
+
+* 效果
+
+最终的双语 EPUB：
+- 英文黑色，中文灰色，视觉区分清晰
+- 关键语句高亮显示
+- 完整目录导航
+- 适配各种阅读器
+
+翻译质量比纯机翻好很多，因为 AI agent 理解上下文，能做到自然流畅的表达。
+
+* 总结
+
+这个项目展示了 AI coding agent 的一个有趣用法——不是写代码，而是作为翻译引擎。核心洞察是：
+
+#+begin_quote
+Agent 本身就是翻译器，不需要调用外部翻译 API。通过 subagent 并行化，可以在几分钟内翻译一整本书。
+#+end_quote
+
+整个工具链只依赖 =pandoc= 和 =ebooklib=，没有任何付费服务。如果你也在用 Kiro 或类似的 AI agent，可以直接 clone 这个 skill 使用。

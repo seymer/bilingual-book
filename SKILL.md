@@ -80,13 +80,29 @@ Rules:
 
 ## Step 4: Generate Output
 
+Generate both bilingual and Chinese-only versions:
+
+**Bilingual (中英对照):**
 ```bash
 python3 {SKILL_DIR}/generate.py epub \
   --content-files /tmp/bilingual_part_1.py,/tmp/bilingual_part_2.py,... \
   --title "Book Title" \
   --author "Author" \
+  --mode bilingual \
   --output /path/to/output_双语对照.epub
 ```
+
+**Chinese-only (纯中文翻译版):**
+```bash
+python3 {SKILL_DIR}/generate.py epub \
+  --content-files /tmp/bilingual_part_1.py,/tmp/bilingual_part_2.py,... \
+  --title "Book Title" \
+  --author "Author" \
+  --mode chinese \
+  --output /path/to/output_中文翻译版.epub
+```
+
+Both versions include a cover page and translator's preface automatically.
 
 For PDF output (requires reportlab):
 ```bash
@@ -95,10 +111,12 @@ python3 {SKILL_DIR}/generate.py pdf \
   --content-files ... \
   --title "Book Title" \
   --author "Author" \
-  --output /path/to/output_双语对照.pdf
+  --output /path/to/output.pdf
 ```
 
 `{SKILL_DIR}` = directory containing this SKILL.md.
+
+**Default behavior:** Generate BOTH versions (bilingual + chinese) unless user specifies otherwise.
 
 ## Step 5: Cleanup
 
