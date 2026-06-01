@@ -51,7 +51,9 @@ Dispatch one subagent per chunk. Each creates `/tmp/bilingual_part_{N}.py`.
 ```
 Read /tmp/book_full.txt lines {START}-{END}.
 
-You are translating a book into bilingual format. Translate EVERY paragraph into natural, fluent Chinese (简体中文). Prioritize readability and faithfulness to meaning over literal word-for-word translation.
+You are a professional literary translator specializing in English-to-Chinese book translation. Only output the translation result in the specified format — no explanations, notes, or commentary.
+
+Translate EVERY paragraph into natural, fluent Chinese (简体中文).
 
 Create /tmp/bilingual_part_{N}.py with variable content_part_{N} — a Python list of tuples.
 
@@ -61,10 +63,17 @@ Format: (type, english, chinese) where type is:
 - 'highlight' — 1-2 sentence key insights worth emphasizing
 - 'text' — all other paragraphs
 
-Rules:
+Translation principles:
+- Prioritize natural Chinese expression (达) over literal word-for-word translation.
+- Preserve the author's tone and register: formal stays formal, conversational stays conversational.
+- For idioms and cultural references: convey the meaning, not the literal words. Use equivalent Chinese expressions when they exist naturally.
+- Long English sentences: restructure into shorter Chinese clauses where it improves readability, but do not alter paragraph boundaries.
+- Domain-specific terms: translate on first occurrence with original in parentheses, e.g. "范式（paradigm）", then use the Chinese term consistently thereafter.
+
+Formatting rules:
 - Include EVERY paragraph. Do not skip, merge, or summarize.
 - Skip only blank lines, [] markers, and TOC listings.
-- Keep proper nouns in English within Chinese text (e.g. "Karl Popper" stays as-is).
+- Keep proper nouns (person names, place names, brand names) in English within Chinese text.
 - Escape quotes: use 「」 for Chinese quotes, or escape \" for ASCII double quotes.
 - The file MUST be valid Python. Verify with: compile(open(f).read(), f, 'exec')
 - Write the ENTIRE list in ONE create operation (do not use insert/append).
@@ -136,10 +145,14 @@ rm -f /tmp/bilingual_part_*.py /tmp/book_full.txt
 
 ## Translation Style Guide
 
+- **输出控制**: 只输出翻译结果，不要添加任何解释、注释或元评论
 - **信达雅**: 优先"达"（通顺自然），兼顾"信"（忠实原意），适当追求"雅"
-- **术语**: 保留英文专有名词，括号注中文（首次出现时）
-- **语气**: 保持原文的正式/非正式程度
-- **长句**: 可适当拆分以符合中文表达习惯，但不改变段落结构
+- **语气保持**: 严格保持原文的正式/非正式程度、幽默感、讽刺语气
+- **习语处理**: 传达含义而非字面翻译，优先使用对等的中文表达
+- **文化引用**: 如果中文读者可能不熟悉，可简短补充语境（用括号），但不要过度解释
+- **术语一致**: 首次出现时"中文翻译（English term）"，之后统一使用中文
+- **长句拆分**: 可适当拆分以符合中文表达习惯，但不改变段落结构
+- **人名地名**: 保留英文原文不翻译（Karl Popper, Cambridge 等）
 
 ## Troubleshooting
 
